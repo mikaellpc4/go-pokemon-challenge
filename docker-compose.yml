@@ -1,25 +1,43 @@
 version: '3.8'
 
 services:
+  api: 
+    container_name: pokemon-challenge-api
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - pokemon
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3333:3333" 
+    volumes:
+      - ./:/app
   db:
-    container_name: pokemon-challenge
+    container_name: pokemon-challenge-db
     image: postgres
     restart: always
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_HOST: ${DATABASE_HOST}
       POSTGRES_PORT: ${DATABASE_PORT}
     ports:
       - "${DATABASE_PORT}:5432"
     volumes:
       - pokemon-challenge:/var/lib/postgresql/data
     networks:
-      - backend
+      - pokemon
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
-  backend:
+  pokemon:
 
 
 volumes:

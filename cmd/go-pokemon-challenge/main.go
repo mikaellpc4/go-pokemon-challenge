@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/mikaellpc4/go-pokemon-challenge/initializers"
 	"github.com/mikaellpc4/go-pokemon-challenge/internal/routes"
 )
@@ -13,7 +15,7 @@ func init() {
 func main() {
 	router := routes.NewRouter()
 
-	port := "3333"
+	port := os.Getenv("PORT")
 	err := router.Start(":" + port)
 
 	if err != nil {
