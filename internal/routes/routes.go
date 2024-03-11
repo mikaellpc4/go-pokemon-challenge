@@ -8,7 +8,9 @@ import (
 func NewRouter() *echo.Echo {
 	e := echo.New()
 
-	e.POST("/team", team.CreateTeam)
+	e.GET("api/teams", team.GetTeams)
+	e.GET("api/teams/:ïd", team.CreateTeam)
+	e.POST("/api/teams", team.CreateTeam)
 
 	return e
 }

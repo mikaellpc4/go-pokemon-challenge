@@ -25,5 +25,13 @@ func CreateTeam(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusCreated)
+}
 
+func GetTeams(c echo.Context) error {
+	res, err := GetTeamsService()
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, res)
 }

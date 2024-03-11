@@ -8,6 +8,38 @@ import (
 	"github.com/mikaellpc4/go-pokemon-challenge/internal/pokemon"
 )
 
+type Team struct {
+	ID       int
+	Name     string
+	Pokemons []string
+}
+
+func GetTeamsService() ([]Team, error) {
+	var teams []Team
+
+	db := initializers.DB()
+	defer db.Close()
+
+	rows, err := db.Query("SELECT * FROM teams")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var team Team
+		if err := rows.Scan(&team.ID, &team.Name, pq.Array(&team.Pokemons)); err != nil {
+			return nil, err
+		}
+		teams = append(teams, team)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return teams, nil
+}
+
 func CreateTeamService(name string, pokemons []string) error {
 	db := initializers.DB()
 	defer db.Close()
