@@ -9,9 +9,9 @@ import (
 )
 
 type Team struct {
-	ID       int
-	Name     string
-	Pokemons []string
+	ID       int      `json:"id"`
+	Owner    string   `json:"owner"`
+	Pokemons []string `json:"pokemons"`
 }
 
 func GetTeamsService() ([]Team, error) {
@@ -28,9 +28,12 @@ func GetTeamsService() ([]Team, error) {
 
 	for rows.Next() {
 		var team Team
-		if err := rows.Scan(&team.ID, &team.Name, pq.Array(&team.Pokemons)); err != nil {
+
+		pokemonsArray := pq.Array(&team.Pokemons)
+		if err := rows.Scan(&team.ID, &team.Owner, pokemonsArray); err != nil {
 			return nil, err
 		}
+
 		teams = append(teams, team)
 	}
 	if err := rows.Err(); err != nil {
@@ -40,13 +43,14 @@ func GetTeamsService() ([]Team, error) {
 	return teams, nil
 }
 
-func GetTeamByNameService(userName string) (*Team, error) {
+func GetTeamByOwnerService(owner string) (*Team, error) {
 	db := initializers.DB()
 	defer db.Close()
 
 	var team Team
 
-	err := db.QueryRow("SELECT id, name, pokemons FROM teams WHERE name = $1", userName).Scan(&team.ID, &team.Name, pq.Array(&team.Pokemons))
+	pokemonsArray := pq.Array(&team.Pokemons)
+	err := db.QueryRow("SELECT * FROM teams WHERE owner = $1", owner).Scan(&team.ID, &team.Owner, pokemonsArray)
 	if err != nil {
 		return nil, err
 	}
@@ -54,16 +58,16 @@ func GetTeamByNameService(userName string) (*Team, error) {
 	return &team, nil
 }
 
-func CreateTeamService(name string, pokemons []string) error {
+func CreateTeamService(owner string, pokemons []string) error {
 	db := initializers.DB()
 	defer db.Close()
 
-	var userExists bool
-	err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM teams WHERE name = $1)", name).Scan(&userExists)
+	var ownerExists bool
+	err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM teams WHERE owner = $1)", owner).Scan(&ownerExists)
 	if err != nil {
 		return err
 	}
-	if userExists {
+	if ownerExists {
 		return errors.New("user already in use")
 	}
 
@@ -72,7 +76,7 @@ func CreateTeamService(name string, pokemons []string) error {
 		return err
 	}
 
-	stmt, err := db.Prepare("INSERT INTO teams (name, pokemons) VALUES ($1, $2)")
+	stmt, err := db.Prepare("INSERT INTO teams (owner, pokemons) VALUES ($1, $2)")
 	if err != nil {
 		return err
 	}
@@ -80,7 +84,7 @@ func CreateTeamService(name string, pokemons []string) error {
 
 	pokemonsArray := pq.Array(pokemons)
 
-	_, err = stmt.Exec(name, pokemonsArray)
+	_, err = stmt.Exec(owner, pokemonsArray)
 	if err != nil {
 		return err
 	}

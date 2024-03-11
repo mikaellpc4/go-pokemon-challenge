@@ -34,7 +34,7 @@ func InitializeDB() {
 	_, err := db.Exec(`
         CREATE TABLE IF NOT EXISTS teams (
             id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
+            owner TEXT NOT NULL,
             pokemons TEXT[] NOT NULL
         );
 	`)

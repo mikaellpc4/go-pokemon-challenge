@@ -39,7 +39,7 @@ func GetTeams(c echo.Context) error {
 func GetTeamByUser(c echo.Context) error {
 	name := c.Param("name")
 
-	team, err := GetTeamByNameService(name)
+	team, err := GetTeamByOwnerService(name)
 	if err != nil {
 		return c.NoContent(http.StatusNotFound)
 	}
