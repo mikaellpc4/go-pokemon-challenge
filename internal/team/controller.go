@@ -7,8 +7,8 @@ import (
 )
 
 type CreateTeamRequest struct {
-	Name     string   `json:"name"`
-	Pokemons []string `json:"pokemons"`
+	Name string   `json:"name"`
+	Team []string `json:"team"`
 }
 
 func CreateTeam(c echo.Context) error {
@@ -19,7 +19,7 @@ func CreateTeam(c echo.Context) error {
 		return bindErr
 	}
 
-	err := CreateTeamService(body.Name, body.Pokemons)
+	err := CreateTeamService(body.Name, body.Team)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
 	}
