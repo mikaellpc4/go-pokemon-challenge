@@ -11,7 +11,7 @@ import (
 type Team struct {
 	ID       int       `json:"id"`
 	Owner    string    `json:"owner"`
-	Pokemons []Pokemon `json:"pokemons" db:"pokemons"`
+	Pokemons []Pokemon `json:"pokemons"`
 }
 
 type Pokemon struct {
@@ -81,12 +81,12 @@ func GetTeamByOwnerService(owner string) (*Team, error) {
 	return &team, nil
 }
 
-func CreateTeamService(owner string, pokemons []string) error {
+func CreateTeamService(team CreateTeamRequest) error {
 	db := initializers.DB()
 	defer db.Close()
 
 	var ownerExists bool
-	err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM teams WHERE owner = $1)", owner).Scan(&ownerExists)
+	err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM teams WHERE owner = $1)", team.User).Scan(&ownerExists)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func CreateTeamService(owner string, pokemons []string) error {
 		return errors.New("user already in use")
 	}
 
-	pokemonsData, err := pokemon.ValidatePokemons(pokemons)
+	pokemonsData, err := pokemon.ValidatePokemons(team.Team)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func CreateTeamService(owner string, pokemons []string) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(owner, string(pokemonsJSON))
+	_, err = stmt.Exec(team.User, string(pokemonsJSON))
 	if err != nil {
 		return err
 	}
