@@ -9,7 +9,7 @@ func NewRouter() *echo.Echo {
 	e := echo.New()
 
 	e.GET("api/teams", team.GetTeams)
-	e.GET("api/teams/:ïd", team.CreateTeam)
+	e.GET("api/teams/:name", team.GetTeamByUser)
 	e.POST("/api/teams", team.CreateTeam)
 
 	return e

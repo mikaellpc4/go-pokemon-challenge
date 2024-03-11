@@ -40,6 +40,20 @@ func GetTeamsService() ([]Team, error) {
 	return teams, nil
 }
 
+func GetTeamByNameService(userName string) (*Team, error) {
+	db := initializers.DB()
+	defer db.Close()
+
+	var team Team
+
+	err := db.QueryRow("SELECT id, name, pokemons FROM teams WHERE name = $1", userName).Scan(&team.ID, &team.Name, pq.Array(&team.Pokemons))
+	if err != nil {
+		return nil, err
+	}
+
+	return &team, nil
+}
+
 func CreateTeamService(name string, pokemons []string) error {
 	db := initializers.DB()
 	defer db.Close()

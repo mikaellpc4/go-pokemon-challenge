@@ -35,3 +35,14 @@ func GetTeams(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func GetTeamByUser(c echo.Context) error {
+	name := c.Param("name")
+
+	team, err := GetTeamByNameService(name)
+	if err != nil {
+		return c.NoContent(http.StatusNotFound)
+	}
+
+	return c.JSON(http.StatusOK, team)
+}
