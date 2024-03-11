@@ -1,41 +1,56 @@
 package team
 
 import (
+	"encoding/json"
 	"errors"
 
-	"github.com/lib/pq"
 	"github.com/mikaellpc4/go-pokemon-challenge/initializers"
 	"github.com/mikaellpc4/go-pokemon-challenge/internal/pokemon"
 )
 
 type Team struct {
-	ID       int      `json:"id"`
-	Owner    string   `json:"owner"`
-	Pokemons []string `json:"pokemons"`
+	ID       int       `json:"id"`
+	Owner    string    `json:"owner"`
+	Pokemons []Pokemon `json:"pokemons" db:"pokemons"`
 }
 
-func GetTeamsService() ([]Team, error) {
-	var teams []Team
+type Pokemon struct {
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Height int    `json:"height"`
+	Weight int    `json:"weight"`
+}
 
+func GetTeamsService() (map[int]Team, error) {
 	db := initializers.DB()
 	defer db.Close()
 
-	rows, err := db.Query("SELECT * FROM teams")
+	rows, err := db.Query("SELECT id, owner, pokemons FROM teams")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	teams := make(map[int]Team)
+	id := 1
 	for rows.Next() {
-		var team Team
-
-		pokemonsArray := pq.Array(&team.Pokemons)
-		if err := rows.Scan(&team.ID, &team.Owner, pokemonsArray); err != nil {
+		team := Team{}
+		var pokemonsJSON string
+		err = rows.Scan(&team.ID, &team.Owner, &pokemonsJSON)
+		if err != nil {
 			return nil, err
 		}
 
-		teams = append(teams, team)
+		var pokemons []Pokemon
+		if err := json.Unmarshal([]byte(pokemonsJSON), &pokemons); err != nil {
+			return nil, err
+		}
+
+		team.Pokemons = pokemons
+		teams[id] = team
+		id++
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -49,11 +64,19 @@ func GetTeamByOwnerService(owner string) (*Team, error) {
 
 	var team Team
 
-	pokemonsArray := pq.Array(&team.Pokemons)
-	err := db.QueryRow("SELECT * FROM teams WHERE owner = $1", owner).Scan(&team.ID, &team.Owner, pokemonsArray)
+	var pokemonsJSON string
+	err := db.QueryRow("SELECT * FROM teams WHERE owner = $1", owner).Scan(&team.ID, &team.Owner, &pokemonsJSON)
 	if err != nil {
 		return nil, err
 	}
+
+	var pokemons []Pokemon
+	err = json.Unmarshal([]byte(pokemonsJSON), &pokemons)
+	if err != nil {
+		return nil, err
+	}
+
+	team.Pokemons = pokemons
 
 	return &team, nil
 }
@@ -71,7 +94,12 @@ func CreateTeamService(owner string, pokemons []string) error {
 		return errors.New("user already in use")
 	}
 
-	err = pokemon.ValidatePokemons(pokemons)
+	pokemonsData, err := pokemon.ValidatePokemons(pokemons)
+	if err != nil {
+		return err
+	}
+
+	pokemonsJSON, err := json.Marshal(pokemonsData)
 	if err != nil {
 		return err
 	}
@@ -82,9 +110,7 @@ func CreateTeamService(owner string, pokemons []string) error {
 	}
 	defer stmt.Close()
 
-	pokemonsArray := pq.Array(pokemons)
-
-	_, err = stmt.Exec(owner, pokemonsArray)
+	_, err = stmt.Exec(owner, string(pokemonsJSON))
 	if err != nil {
 		return err
 	}

@@ -1,46 +1,63 @@
 package pokemon
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 )
 
-func ValidatePokemons(pokemons []string) error {
-	var pokemonErrors []error
+type PokemonData struct {
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Weight int    `json:"weight"`
+	Height int    `json:"height"`
+}
+
+func ValidatePokemons(pokemons []string) ([]PokemonData, error) {
+	var validPokemons []PokemonData
+	var invalidPokemons []string
 
 	for _, pokemon := range pokemons {
 		if pokemon == "" {
-			return errors.New("pokemon can't have a empty string as name")
+			return nil, errors.New("pokemon name cannot be empty")
 		}
-		url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", pokemon)
 
+		url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", pokemon)
 		res, err := http.Get(url)
 		if err != nil {
-			return errors.New("error when fetching data from pokeapi.co")
+			return nil, fmt.Errorf("error fetching data from pokeapi.co for %s: %w", pokemon, err)
 		}
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			pokemonErrors = append(pokemonErrors, fmt.Errorf(pokemon))
+			invalidPokemons = append(invalidPokemons, pokemon)
+			continue
 		}
+
+		var pokemonData PokemonData
+		if err := json.NewDecoder(res.Body).Decode(&pokemonData); err != nil {
+			return nil, fmt.Errorf("error decoding data from pokeapi.co for %s: %w", pokemon, err)
+		}
+
+		validPokemons = append(validPokemons, pokemonData)
 	}
 
-	if len(pokemonErrors) > 0 {
+	if len(invalidPokemons) > 0 {
 		var errorMsg string
-		if len(pokemonErrors) > 1 {
+		if len(invalidPokemons) > 1 {
 			errorMsg = "Invalid pokemons: "
 		} else {
 			errorMsg = "Invalid pokemon: "
 		}
-		for i, err := range pokemonErrors {
+		for i := range invalidPokemons {
 			if i > 0 {
 				errorMsg += ", "
 			}
-			errorMsg += err.Error()
+			errorMsg += invalidPokemons[i]
 		}
-		return errors.New(errorMsg)
+		return validPokemons, errors.New(errorMsg)
 	}
 
-	return nil
+	return validPokemons, nil
 }

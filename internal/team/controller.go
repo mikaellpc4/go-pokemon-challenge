@@ -30,7 +30,7 @@ func CreateTeam(c echo.Context) error {
 func GetTeams(c echo.Context) error {
 	res, err := GetTeamsService()
 	if err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	return c.JSON(http.StatusOK, res)

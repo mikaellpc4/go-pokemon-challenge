@@ -35,7 +35,7 @@ func InitializeDB() {
         CREATE TABLE IF NOT EXISTS teams (
             id SERIAL PRIMARY KEY,
             owner TEXT NOT NULL,
-            pokemons TEXT[] NOT NULL
+            pokemons JSONB NOT NULL
         );
 	`)
 	if err != nil {
